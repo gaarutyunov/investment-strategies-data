@@ -1,0 +1,5 @@
+api:
+  token: your_token
+
+db:
+  conn: postgresql://user:password@localhost:5432/dbname
