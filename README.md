@@ -1,4 +1,4 @@
-# Equities historical data fetching from (OpenAPI Tinkoff)[https://github.com/TinkoffCreditSystems/invest-openapi-go-sdk]
+# Equities historical data fetching from [OpenAPI Tinkoff](https://github.com/TinkoffCreditSystems/invest-openapi-go-sdk)
 
 ## Getting started
 
