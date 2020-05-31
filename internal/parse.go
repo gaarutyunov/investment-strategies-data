@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	"fmt"
@@ -9,8 +9,8 @@ import (
 	"github.com/go-gota/gota/series"
 	"io/ioutil"
 	"log"
-	"math"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -37,27 +37,34 @@ type EquityDates struct {
 const (
 	excelLayout   = "01-02-06"
 	ZiplineLayout = "2006-01-02"
-	outFileName   = "index.csv"
-	inFileName    = "index.xlsx"
+	outFileName   = "data/index.csv"
+	inFileName    = "data/index.xlsx"
 )
 
 func Parse() (*dataframe.DataFrame, error) {
-	if fileExists(outFileName) {
-		content, _ := ioutil.ReadFile(outFileName)
+	pwd, err := os.Getwd()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	outFile := filepath.Join(pwd, outFileName)
+	inFile := filepath.Join(pwd, inFileName)
+
+	if FileExists(outFile) {
+		content, _ := ioutil.ReadFile(outFile)
 		ioContent := strings.NewReader(string(content))
 
 		df := dataframe.ReadCSV(ioContent, dataframe.HasHeader(true))
 
 		return &df, nil
 	} else {
-		return doParse(inFileName)
+		return doParse(inFile, outFile)
 	}
 }
 
-func doParse(filename string) (*dataframe.DataFrame, error) {
+func doParse(inFile string, outFile string) (*dataframe.DataFrame, error) {
 	start := time.Now()
 
-	xlsx, err := excelize.OpenFile(filename)
+	xlsx, err := excelize.OpenFile(inFile)
 
 	if err != nil {
 		return nil, err
@@ -114,7 +121,7 @@ func doParse(filename string) (*dataframe.DataFrame, error) {
 	df := dataframe.LoadRecords(rows)
 	df = df.Arrange(dataframe.Sort("date"))
 
-	if f, err := os.Create(outFileName); err != nil {
+	if f, err := os.Create(outFile); err != nil {
 		return nil, err
 	} else if err := df.WriteCSV(f, dataframe.WriteHeader(true)); err != nil {
 		return nil, err
@@ -126,6 +133,9 @@ func doParse(filename string) (*dataframe.DataFrame, error) {
 	}
 }
 
+/**
+Parse Excel date
+ */
 func parseDate(date string) time.Time {
 	if t, err := time.Parse(excelLayout, date); err != nil {
 		return time.Now()
@@ -134,15 +144,10 @@ func parseDate(date string) time.Time {
 	}
 }
 
-func fileExists(filename string) bool {
-	info, err := os.Stat(filename)
-	if os.IsNotExist(err) {
-		return false
-	}
-	return !info.IsDir()
-}
-
-func SelectEquities(df *dataframe.DataFrame) (*[]Equity, error) {
+/**
+Get index member equities with dates in chunks
+ */
+func GetIndexMembers(df *dataframe.DataFrame) (*[]Equity, error) {
 	tickers := df.Col("tickers")
 
 	var distinct []string
@@ -181,34 +186,7 @@ func SelectEquities(df *dataframe.DataFrame) (*[]Equity, error) {
 			return nil, err
 		}
 
-		yearsDiff := math.Floor(to.Sub(from).Hours() / 24 / 365)
-		lastDate := from
-		var equityDates []EquityDates
-
-		if yearsDiff > 0 {
-			for i := 0; i < int(yearsDiff); i++ {
-				newDate := lastDate.AddDate(0, 0, 365)
-
-				equityDates = append(equityDates, EquityDates{
-					From: lastDate,
-					To:   newDate,
-				})
-
-				lastDate = newDate.AddDate(0, 0, 1)
-			}
-
-			if lastDate.Before(to) {
-				equityDates = append(equityDates, EquityDates{
-					From: lastDate,
-					To:   to,
-				})
-			}
-		} else {
-			equityDates = append(equityDates, EquityDates{
-				From: lastDate,
-				To:   to,
-			})
-		}
+		equityDates := GetDates(from, to)
 
 		equities = append(equities, Equity{
 			Dates:  equityDates,
@@ -218,3 +196,4 @@ func SelectEquities(df *dataframe.DataFrame) (*[]Equity, error) {
 
 	return &equities, nil
 }
+

@@ -1,5 +1,3 @@
-CREATE DATABASE investment_strategies;
-
 CREATE TABLE instruments
 (
     id                  BIGSERIAL UNIQUE NOT NULL PRIMARY KEY,

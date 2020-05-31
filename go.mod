@@ -8,6 +8,7 @@ require (
 	github.com/ahmetb/go-linq/v3 v3.1.0
 	github.com/go-gota/gota v0.10.1
 	github.com/jackc/pgx/v4 v4.6.0
+	github.com/sirupsen/logrus v1.6.0
 	github.com/spf13/viper v1.7.0
 	go.uber.org/atomic v1.6.0 // indirect
 	go.uber.org/ratelimit v0.1.0
