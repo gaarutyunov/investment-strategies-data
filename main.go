@@ -38,6 +38,6 @@ func main() {
 
 	client := sdk.NewSandboxRestClient(viper.GetString("api.token"))
 
-	internal.FetchAll(conn, client, time.Date(2008, 1, 3, 0, 0 ,0, 0, time.UTC), time.Date(2010, 5, 30, 0, 0, 0, 0, time.UTC))
+	internal.FetchAll(conn, client, time.Date(2008, 1, 3, 0, 0 ,0, 0, time.UTC), time.Now())
 }
 
